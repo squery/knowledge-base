@@ -73,43 +73,214 @@ def file_management_section():
     """文件管理部分"""
     st.header("📚 文件管理")
     
+    # 获取统计信息
+    stats = get_statistics()
+    
     col1, col2 = st.columns([2, 1])
     
     with col1:
         st.subheader("上传文件")
         uploaded_files = st.file_uploader(
-            "选择文件或文件夹",
+            "选择文件",
             accept_multiple_files=True,
-            help="支持文档(txt, pdf, docx, md, html)和代码文件(py, js, java等)"
+            help="支持文档(txt, pdf, docx, md, html)和代码文件(py, js, java等)",
+            key="file_uploader"
         )
         
         if uploaded_files:
             st.info(f"选中 {len(uploaded_files)} 个文件")
             if st.button("开始上传", key="upload_btn"):
-                st.success("文件上传功能待实现")
-                st.progress(100)
+                upload_files(uploaded_files)
     
     with col2:
         st.subheader("统计信息")
-        st.metric("已上传文件", 0)
-        st.metric("已索引文件", 0)
-        st.metric("索引中文件", 0)
+        if stats:
+            st.metric("总文件数", stats.get("total_files", 0))
+            st.metric("已索引", stats.get("indexed_count", 0))
+            st.metric("待索引", stats.get("pending_count", 0))
+        else:
+            st.metric("总文件数", 0)
+            st.metric("已索引", 0)
+            st.metric("待索引", 0)
     
     # 文件列表
     st.subheader("已上传文件列表")
-    if st.session_state.uploaded_files:
-        # 创建表格显示文件
-        file_data = []
-        for f in st.session_state.uploaded_files:
-            file_data.append({
-                "文件名": f["name"],
-                "大小(MB)": f"{f['size'] / (1024*1024):.2f}",
-                "索引状态": f["status"],
-                "操作": "删除"
-            })
-        st.dataframe(file_data, use_container_width=True)
+    
+    # 过滤选项
+    col1, col2, col3 = st.columns([2, 2, 1])
+    with col1:
+        filter_type = st.selectbox(
+            "文件类型",
+            ["全部", "文档(document)", "代码(code)"],
+            key="filter_type"
+        )
+    with col2:
+        filter_status = st.selectbox(
+            "索引状态",
+            ["全部", "待索引(pending)", "索引中(indexing)", "已索引(indexed)", "失败(failed)"],
+            key="filter_status"
+        )
+    with col3:
+        if st.button("🔄 刷新", key="refresh_btn"):
+            st.rerun()
+    
+    # 获取文件列表
+    file_type_param = None if filter_type == "全部" else filter_type.split("(")[1].rstrip(")")
+    status_param = None if filter_status == "全部" else filter_status.split("(")[1].rstrip(")")
+    
+    files = get_file_list(file_type_param, status_param)
+    
+    if files:
+        # 选择要删除的文件
+        selected_files = []
+        
+        for idx, file in enumerate(files):
+            col1, col2, col3, col4, col5, col6 = st.columns([3, 1, 1, 1, 1, 1])
+            
+            with col1:
+                st.text(file.get("original_filename", "未知"))
+            with col2:
+                file_size_mb = file.get("file_size", 0) / (1024 * 1024)
+                st.text(f"{file_size_mb:.2f} MB")
+            with col3:
+                file_type = file.get("file_type", "未知")
+                st.text(file_type)
+            with col4:
+                status = file.get("index_status", "未知")
+                status_emoji = {
+                    "pending": "⏳",
+                    "indexing": "🔄",
+                    "indexed": "✅",
+                    "failed": "❌"
+                }
+                st.text(f"{status_emoji.get(status, '')} {status}")
+            with col5:
+                if st.checkbox("选择", key=f"select_{file['id']}", label_visibility="collapsed"):
+                    selected_files.append(file['id'])
+            with col6:
+                if st.button("🗑️", key=f"del_{file['id']}", help="删除文件"):
+                    delete_file(file['id'])
+        
+        # 批量删除
+        st.divider()
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            if selected_files and st.button("批量删除选中", key="batch_delete_btn"):
+                batch_delete_files(selected_files)
     else:
         st.info("暂无上传文件")
+
+
+def get_statistics():
+    """获取统计信息"""
+    try:
+        response = requests.get(f"{API_URL}/api/files/statistics", timeout=5)
+        if response.status_code == 200:
+            return response.json().get("data", {})
+    except Exception as e:
+        st.error(f"获取统计信息失败: {str(e)}")
+    return None
+
+
+def get_file_list(file_type=None, index_status=None):
+    """获取文件列表"""
+    try:
+        params = {}
+        if file_type:
+            params["file_type"] = file_type
+        if index_status:
+            params["index_status"] = index_status
+        
+        response = requests.get(f"{API_URL}/api/files/list", params=params, timeout=5)
+        if response.status_code == 200:
+            return response.json().get("data", [])
+    except Exception as e:
+        st.error(f"获取文件列表失败: {str(e)}")
+    return []
+
+
+def upload_files(files):
+    """上传文件"""
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    total = len(files)
+    success_count = 0
+    failed_count = 0
+    skipped_count = 0
+    
+    for idx, file in enumerate(files):
+        try:
+            status_text.text(f"正在上传: {file.name} ({idx + 1}/{total})")
+            
+            # 读取文件内容
+            file_content = file.read()
+            
+            # 上传到后端
+            files_data = {"file": (file.name, file_content, file.type)}
+            response = requests.post(
+                f"{API_URL}/api/files/upload",
+                files=files_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("success"):
+                    success_count += 1
+                else:
+                    failed_count += 1
+            else:
+                failed_count += 1
+                
+        except Exception as e:
+            st.error(f"上传 {file.name} 失败: {str(e)}")
+            failed_count += 1
+        
+        progress_bar.progress((idx + 1) / total)
+    
+    progress_bar.empty()
+    status_text.empty()
+    
+    if success_count > 0:
+        st.success(f"✅ 成功上传 {success_count} 个文件")
+    if failed_count > 0:
+        st.error(f"❌ 失败 {failed_count} 个文件")
+    if skipped_count > 0:
+        st.warning(f"⏭️ 跳过 {skipped_count} 个文件(已存在)")
+    
+    st.rerun()
+
+
+def delete_file(file_id):
+    """删除单个文件"""
+    try:
+        response = requests.delete(f"{API_URL}/api/files/{file_id}", timeout=5)
+        if response.status_code == 200:
+            st.success("文件删除成功")
+            st.rerun()
+        else:
+            st.error("文件删除失败")
+    except Exception as e:
+        st.error(f"删除文件失败: {str(e)}")
+
+
+def batch_delete_files(file_ids):
+    """批量删除文件"""
+    try:
+        response = requests.post(
+            f"{API_URL}/api/files/delete/batch",
+            json=file_ids,
+            timeout=10
+        )
+        if response.status_code == 200:
+            result = response.json()
+            st.success(result.get("message", "批量删除完成"))
+            st.rerun()
+        else:
+            st.error("批量删除失败")
+    except Exception as e:
+        st.error(f"批量删除失败: {str(e)}")
 
 
 def qa_section():

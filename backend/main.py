@@ -10,6 +10,8 @@ import uvicorn
 
 from config import settings
 from logger_config import setup_logger, get_logger
+from database import init_database
+from routers import file_routes
 
 # 初始化日志
 logger = setup_logger()
@@ -34,6 +36,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# 注册路由
+app.include_router(file_routes.router)
 
 
 # 错误处理
@@ -87,6 +93,9 @@ async def startup_event():
     """应用启动事件"""
     app_logger.info("应用启动中...")
     
+    # 初始化数据库
+    init_database()
+    
     # 创建必要的目录
     for directory in [
         settings.DOCUMENTS_DIR,
@@ -104,27 +113,6 @@ async def startup_event():
 async def shutdown_event():
     """应用关闭事件"""
     app_logger.info("应用关闭中...")
-
-
-# 示例路由 - 文件上传（后续实现）
-@app.post("/api/files/upload")
-async def upload_file():
-    """文件上传端点 (待实现)"""
-    return {"status": "not_implemented"}
-
-
-# 示例路由 - 获取文件列表（后续实现）
-@app.get("/api/files/list")
-async def list_files():
-    """文件列表端点 (待实现)"""
-    return {"files": []}
-
-
-# 示例路由 - 问答（后续实现）
-@app.post("/api/qa/chat")
-async def chat():
-    """问答端点 (待实现)"""
-    return {"response": "not_implemented"}
 
 
 if __name__ == "__main__":

@@ -5,6 +5,9 @@ python-multipart==0.0.6
 pydantic==2.5.0
 pydantic-settings==2.1.0
 
+# 数据库
+sqlalchemy==2.0.23
+
 # 前端依赖
 streamlit==1.28.1
 streamlit-chat==0.1.1
