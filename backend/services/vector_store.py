@@ -31,20 +31,15 @@ class VectorStore:
         """初始化 Chroma 向量存储"""
         try:
             import chromadb
-            from chromadb.config import Settings
             
             # 确保持久化目录存在
             os.makedirs(self.persist_dir, exist_ok=True)
             
             logger.info(f"初始化 Chroma 向量存储: {self.persist_dir}")
             
-            # 创建持久化客户端
-            self.client = chromadb.Client(
-                Settings(
-                    chroma_db_impl="duckdb+parquet",
-                    persist_directory=self.persist_dir,
-                    anonymized_telemetry=False
-                )
+            # 使用新版本 Chroma API
+            self.client = chromadb.PersistentClient(
+                path=self.persist_dir
             )
             
             # 获取或创建默认集合

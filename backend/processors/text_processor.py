@@ -6,6 +6,12 @@ import os
 from typing import List, Tuple, Optional
 from pathlib import Path
 import re
+import sys
+
+# 添加后端目录到路径
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
 from logger_config import get_logger
 from config import settings
