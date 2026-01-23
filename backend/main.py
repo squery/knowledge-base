@@ -129,10 +129,11 @@ async def chat():
 
 if __name__ == "__main__":
     app_logger.info(f"启动API服务器: {settings.HOST}:{settings.PORT}")
+    # reload=True时需要传入导入字符串，但直接运行时设为False
     uvicorn.run(
-        app,
+        "main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.RELOAD,
+        reload=False,  # 直接运行时不启用reload
         log_config=None  # 使用自定义日志配置
     )

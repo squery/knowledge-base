@@ -24,6 +24,24 @@ st.markdown("""
         font-size: 1.1em;
         padding: 0.5rem 1rem;
     }
+    /* Sidebar navigation radio styles to avoid white-on-white check effect */
+    .sidebar-nav div[role="radiogroup"] > label {
+        border-radius: 10px;
+        padding: 6px 10px;
+        margin-bottom: 6px;
+        transition: all 0.2s ease;
+    }
+    .sidebar-nav div[role="radiogroup"] > label:hover {
+        background: #f4f6fb;
+    }
+    .sidebar-nav div[role="radiogroup"] > label input:checked + div {
+        background: linear-gradient(120deg, #2563eb, #10b981);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+        color: #ffffff;
+    }
+    .sidebar-nav div[role="radiogroup"] > label input:checked + div p {
+        color: #ffffff;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -39,7 +57,7 @@ def init_session_state():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "selected_tab" not in st.session_state:
-        st.session_state.selected_tab = "📚 文件管理"
+        st.session_state.selected_tab = "🔍 智能问答"
 
 
 def check_api_health():
@@ -190,7 +208,15 @@ def main():
     # 侧边栏导航
     with st.sidebar:
         st.title("导航")
-        selected = st.radio("选择功能", SIDEBAR_SECTIONS, label_visibility="collapsed")
+        st.markdown('<div class="sidebar-nav">', unsafe_allow_html=True)
+        selected = st.radio(
+            "选择功能",
+            SIDEBAR_SECTIONS,
+            index=SIDEBAR_SECTIONS.index(st.session_state.selected_tab),
+            label_visibility="collapsed",
+        )
+        st.session_state.selected_tab = selected
+        st.markdown('</div>', unsafe_allow_html=True)
         
         st.divider()
         st.subheader("关于")
