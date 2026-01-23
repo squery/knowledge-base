@@ -2,7 +2,7 @@
 文件管理路由
 处理文件上传、列表、删除等API端点
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -10,16 +10,28 @@ from typing import List, Optional
 from database import get_db
 from models import FileType, IndexStatus
 from services.file_service import FileService
+from services.indexing_service import get_indexing_service
 from logger_config import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/files", tags=["文件管理"])
 
 
+# 后台索引任务
+async def background_index_file(file_id: int, file_path: str, file_type: str):
+    """后台索引任务"""
+    try:
+        indexing_service = get_indexing_service()
+        indexing_service.index_file(file_id, file_path, file_type)
+    except Exception as e:
+        logger.error(f"后台索引失败: {str(e)}", exc_info=True)
+
+
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = None
 ):
     """
     上传单个文件
@@ -27,6 +39,7 @@ async def upload_file(
     Args:
         file: 上传的文件
         db: 数据库会话
+        background_tasks: 后台任务
         
     Returns:
         文件元数据
@@ -46,9 +59,18 @@ async def upload_file(
             file_size=file_size
         )
 
+        # 添加后台索引任务
+        if background_tasks:
+            background_tasks.add_task(
+                background_index_file,
+                file_metadata.id,
+                file_metadata.file_path,
+                file_metadata.file_type
+            )
+
         return {
             "success": True,
-            "message": "文件上传成功",
+            "message": "文件上传成功，正在后台索引...",
             "data": file_metadata.to_dict()
         }
 
@@ -63,7 +85,8 @@ async def upload_file(
 @router.post("/upload/batch")
 async def upload_files_batch(
     files: List[UploadFile] = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = None
 ):
     """
     批量上传文件
@@ -71,6 +94,7 @@ async def upload_files_batch(
     Args:
         files: 上传的文件列表
         db: 数据库会话
+        background_tasks: 后台任务
         
     Returns:
         上传结果统计
@@ -97,6 +121,15 @@ async def upload_files_batch(
                     file_content=file_content,
                     file_size=file_size
                 )
+
+                # 添加后台索引任务
+                if background_tasks:
+                    background_tasks.add_task(
+                        background_index_file,
+                        file_metadata.id,
+                        file_metadata.file_path,
+                        file_metadata.file_type
+                    )
 
                 # 检查是否是已存在的文件
                 if file_metadata.filename != file.filename:

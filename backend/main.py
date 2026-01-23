@@ -11,7 +11,7 @@ import uvicorn
 from config import settings
 from logger_config import setup_logger, get_logger
 from database import init_database
-from routers import file_routes
+from routers import file_routes, index_routes
 
 # 初始化日志
 logger = setup_logger()
@@ -40,6 +40,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(file_routes.router)
+app.include_router(index_routes.router)
 
 
 # 错误处理

@@ -47,7 +47,7 @@ st.markdown("""
 
 # 全局变量
 API_URL = "http://localhost:8000"
-SIDEBAR_SECTIONS = ["📚 文件管理", "🔍 智能问答", "⚙️ 系统设置"]
+SIDEBAR_SECTIONS = ["📚 文件管理", "🔍 智能问答", "📊 索引管理", "⚙️ 系统设置"]
 
 
 def init_session_state():
@@ -329,6 +329,217 @@ def qa_section():
             top_k = st.slider("检索文档数", 1, 10, 3)
 
 
+def index_management_section():
+    """索引管理部分"""
+    st.header("📊 索引管理")
+    
+    # 获取索引状态
+    try:
+        response = requests.get(f"{API_URL}/api/index/status", timeout=5)
+        if response.status_code == 200:
+            stats = response.json()
+            
+            # 统计信息卡片
+            col1, col2, col3, col4, col5 = st.columns(5)
+            
+            with col1:
+                st.metric(
+                    "总文件数",
+                    stats.get("total_files", 0)
+                )
+            with col2:
+                st.metric(
+                    "已索引",
+                    stats.get("indexed_files", 0)
+                )
+            with col3:
+                st.metric(
+                    "待索引",
+                    stats.get("pending_files", 0)
+                )
+            with col4:
+                st.metric(
+                    "索引中",
+                    stats.get("indexing_files", 0)
+                )
+            with col5:
+                st.metric(
+                    "失败",
+                    stats.get("failed_files", 0)
+                )
+            
+            # 索引进度
+            st.subheader("索引进度")
+            total_chunks = stats.get("total_chunks", 0)
+            vector_count = stats.get("vector_count", 0)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("总分块数", total_chunks)
+            with col2:
+                st.metric("向量库数", vector_count)
+            
+            # 索引比例
+            st.progress(
+                float(stats.get("index_ratio", "0%").rstrip("%")) / 100.0,
+                text=f"索引完成率: {stats.get('index_ratio', '0%')}"
+            )
+            
+        else:
+            st.error(f"获取索引状态失败: {response.status_code}")
+            
+    except Exception as e:
+        st.error(f"获取索引状态出错: {str(e)}")
+    
+    # 索引操作
+    st.subheader("索引操作")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("🔄 批量索引", use_container_width=True):
+            with st.spinner("正在重建索引..."):
+                try:
+                    response = requests.post(
+                        f"{API_URL}/api/index/rebuild",
+                        timeout=300
+                    )
+                    if response.status_code == 200:
+                        result = response.json()
+                        st.success(result.get("message", "重建成功"))
+                        st.json(result.get("stats", {}))
+                    else:
+                        st.error(f"重建失败: {response.status_code}")
+                except Exception as e:
+                    st.error(f"重建失败: {str(e)}")
+    
+    with col2:
+        if st.button("🔍 刷新状态", use_container_width=True):
+            st.rerun()
+    
+    with col3:
+        if st.button("❌ 清空索引", use_container_width=True):
+            st.warning("此操作将清空所有索引，无法恢复！")
+            if st.button("确认清空", key="confirm_clear"):
+                st.info("清空功能待实现")
+    
+    # 文件索引详情
+    st.subheader("文件索引详情")
+    
+    try:
+        response = requests.get(f"{API_URL}/api/files/list", timeout=5)
+        if response.status_code == 200:
+            files = response.json().get("data", {}).get("items", [])
+            
+            if files:
+                # 创建表格数据
+                table_data = []
+                for file in files:
+                    status = file.get("index_status", "未知")
+                    status_emoji = {
+                        "pending": "⏳",
+                        "indexing": "⏳",
+                        "indexed": "✅",
+                        "failed": "❌"
+                    }.get(status, "❓")
+                    
+                    table_data.append({
+                        "文件名": file.get("original_filename", "未知"),
+                        "状态": f"{status_emoji} {status}",
+                        "分块数": file.get("chunk_count", 0),
+                        "文件大小": f"{file.get('file_size', 0) / (1024*1024):.2f} MB",
+                        "上传时间": file.get("upload_time", "未知")[:10] if file.get("upload_time") else "未知"
+                    })
+                
+                # 显示表格
+                st.dataframe(table_data, use_container_width=True)
+                
+                # 单个文件操作
+                st.subheader("单个文件操作")
+                selected_filename = st.selectbox(
+                    "选择要操作的文件",
+                    [f["original_filename"] for f in files],
+                    key="file_select"
+                )
+                
+                selected_file = next(
+                    (f for f in files if f["original_filename"] == selected_filename),
+                    None
+                )
+                
+                if selected_file:
+                    file_id = selected_file.get("id")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        if st.button("🔄 重新索引", use_container_width=True):
+                            with st.spinner(f"正在索引 {selected_filename}..."):
+                                try:
+                                    response = requests.post(
+                                        f"{API_URL}/api/index/files/{file_id}",
+                                        timeout=60
+                                    )
+                                    if response.status_code == 200:
+                                        result = response.json()
+                                        st.success(result.get("message", "索引成功"))
+                                    else:
+                                        st.error(f"索引失败: {response.status_code}")
+                                except Exception as e:
+                                    st.error(f"索引失败: {str(e)}")
+                    
+                    with col2:
+                        if st.button("🗑️ 删除索引", use_container_width=True):
+                            try:
+                                response = requests.delete(
+                                    f"{API_URL}/api/index/files/{file_id}",
+                                    timeout=10
+                                )
+                                if response.status_code == 200:
+                                    st.success("索引已删除")
+                                    st.rerun()
+                                else:
+                                    st.error(f"删除失败: {response.status_code}")
+                            except Exception as e:
+                                st.error(f"删除失败: {str(e)}")
+            else:
+                st.info("暂无文件")
+                
+        else:
+            st.error(f"获取文件列表失败: {response.status_code}")
+            
+    except Exception as e:
+        st.error(f"获取文件列表出错: {str(e)}")
+    
+    # 语义搜索
+    st.subheader("语义搜索测试")
+    search_query = st.text_input("输入搜索文本")
+    top_k = st.slider("返回结果数", 1, 10, 3)
+    
+    if search_query and st.button("搜索", use_container_width=True):
+        with st.spinner("搜索中..."):
+            try:
+                response = requests.post(
+                    f"{API_URL}/api/index/search",
+                    params={"query": search_query, "top_k": top_k},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    st.success(f"找到 {result.get('total_results', 0)} 条相关结果")
+                    
+                    for i, item in enumerate(result.get("results", []), 1):
+                        with st.expander(f"结果 {i} - 相似度: {item.get('similarity', 0):.2%}"):
+                            st.write(f"**内容:** {item.get('content', '')[:200]}...")
+                            st.caption(f"📁 {item.get('file_path', '未知')}")
+                            if item.get('chunk_index') is not None:
+                                st.caption(f"📍 分块 #{item.get('chunk_index', 0)}")
+                else:
+                    st.error(f"搜索失败: {response.status_code}")
+            except Exception as e:
+                st.error(f"搜索出错: {str(e)}")
+
+
 def settings_section():
     """系统设置部分"""
     st.header("⚙️ 系统设置")
@@ -402,6 +613,8 @@ def main():
         file_management_section()
     elif selected == "🔍 智能问答":
         qa_section()
+    elif selected == "📊 索引管理":
+        index_management_section()
     elif selected == "⚙️ 系统设置":
         settings_section()
     

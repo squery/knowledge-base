@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     MYSQL_HOST: str = "localhost"
     MYSQL_PORT: int = 3306
     MYSQL_USER: str = "root"
-    MYSQL_PASSWORD: str = "password"
+    MYSQL_PASSWORD: str = ""
     MYSQL_DB: str = "knowledge_base"
     MYSQL_POOL_SIZE: int = 10
     

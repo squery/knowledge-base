@@ -29,17 +29,17 @@ class FileMetadata(Base):
     __tablename__ = "file_metadata"
 
     id = Column(Integer, primary_key=True, index=True)
-    filename = Column(String, nullable=False, index=True)  # 文件名
-    original_filename = Column(String, nullable=False)  # 原始文件名
-    file_path = Column(String, nullable=False, unique=True)  # 文件存储路径
+    filename = Column(String(191), nullable=False, index=True)  # 文件名 (utf8mb4索引安全长度)
+    original_filename = Column(String(255), nullable=False)  # 原始文件名
+    file_path = Column(String(191), nullable=False, unique=True)  # 文件存储路径 (utf8mb4索引安全长度)
     file_type = Column(Enum(FileType), nullable=False, index=True)  # 文件类型
-    file_extension = Column(String, nullable=False)  # 文件扩展名
+    file_extension = Column(String(16), nullable=False)  # 文件扩展名
     file_size = Column(BigInteger, nullable=False)  # 文件大小(字节)
     md5_hash = Column(String(32), nullable=False, unique=True, index=True)  # MD5哈希
     upload_time = Column(DateTime, default=datetime.now, nullable=False)  # 上传时间
     index_status = Column(Enum(IndexStatus), default=IndexStatus.PENDING, nullable=False)  # 索引状态
     index_time = Column(DateTime, nullable=True)  # 索引完成时间
-    error_message = Column(String, nullable=True)  # 错误信息
+    error_message = Column(String(512), nullable=True)  # 错误信息
     chunk_count = Column(Integer, default=0)  # 分块数量
     is_deleted = Column(Boolean, default=False)  # 软删除标记
 
