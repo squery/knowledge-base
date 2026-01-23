@@ -1,6 +1,11 @@
 #!/bin/bash
 # 前端启动脚本 (Linux/Mac)
 
+# 强制使用UTF-8，避免中文乱码
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+export PYTHONIOENCODING=utf-8
+
 echo "======================================"
 echo "本地知识库系统 - 前端启动"
 echo "======================================"

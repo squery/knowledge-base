@@ -1,4 +1,6 @@
 @echo off
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
 REM 前端启动脚本 (Windows)
 
 echo ======================================
@@ -25,27 +27,30 @@ if not exist "venv" (
 REM 激活虚拟环境
 call venv\Scripts\activate.bat
 
-REM 安装依赖
+REM 安装依赖 (只在venv中)
 echo [!] 检查依赖...
-pip install -q -r requirements.txt
-if errorlevel 1 (
-    echo [错误] 依赖安装失败
-    pause
-    exit /b 1
+if not exist "venv\Lib\site-packages\streamlit" (
+    echo [*] 首次安装，可能需要几分钟...
+    .\venv\Scripts\python.exe -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+) else (
+    echo [✓] 依赖已安装
 )
 
-echo [✓] 依赖安装/更新完成
-
-REM 启动前端服务
+echo.
+echo ======================================
+echo [✓] 依赖检查完成
 echo.
 echo [+] 启动前端服务: http://localhost:8501
 echo [+] 请在浏览器中打开上述地址
 echo.
+echo 后端服务应该已启动（http://localhost:8000）
 echo 按 Ctrl+C 停止服务
+echo ======================================
 echo.
 
-timeout /t 2 /nobreak
-start http://localhost:8501
-streamlit run frontend\app.py
+timeout /t 2 /nobreak >nul
+
+REM 固定端口并启动前端
+streamlit run frontend\app.py --server.port 8501 --server.address 0.0.0.0
 
 pause

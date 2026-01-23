@@ -1,4 +1,6 @@
 @echo off
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
 REM 后端启动脚本 (Windows)
 
 echo ======================================
@@ -25,23 +27,25 @@ if not exist "venv" (
 REM 激活虚拟环境
 call venv\Scripts\activate.bat
 
-REM 安装依赖
+REM 安装依赖 (只在venv中)
 echo [!] 检查依赖...
-pip install -q -r requirements.txt
-if errorlevel 1 (
-    echo [错误] 依赖安装失败
-    pause
-    exit /b 1
+if not exist "venv\Lib\site-packages\fastapi" (
+    echo [*] 首次安装，可能需要几分钟...
+    .\venv\Scripts\python.exe -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+) else (
+    echo [✓] 依赖已安装
 )
 
-echo [✓] 依赖安装/更新完成
-
-REM 启动后端服务
+echo.
+echo ======================================
+echo [✓] 依赖检查完成
 echo.
 echo [+] 启动后端服务: http://localhost:8000
-echo [+] 文档地址: http://localhost:8000/docs
+echo [+] API文档: http://localhost:8000/docs
+echo [+] 交互式文档: http://localhost:8000/redoc
 echo.
 echo 按 Ctrl+C 停止服务
+echo ======================================
 echo.
 
 python backend\main.py

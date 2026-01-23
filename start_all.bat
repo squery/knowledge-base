@@ -1,4 +1,6 @@
 @echo off
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
 REM 一键启动脚本 (Windows)
 
 echo ======================================
@@ -25,31 +27,29 @@ if not exist "venv" (
 REM 激活虚拟环境
 call venv\Scripts\activate.bat
 
-REM 安装依赖
+REM 安装依赖 (只在venv中安装)
 echo [!] 检查并安装依赖...
-pip install -q -r requirements.txt
-if errorlevel 1 (
-    echo [错误] 依赖安装失败
-    pause
-    exit /b 1
+if not exist "venv\Lib\site-packages\fastapi" (
+    echo [*] 首次安装，可能需要几分钟...
+    .\venv\Scripts\python.exe -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+) else (
+    echo [✓] 依赖已安装
 )
-
-echo [✓] 依赖安装/更新完成
 echo.
 
 REM 启动后端
 echo [+] 启动后端服务...
-start "后端服务" cmd /k python backend\main.py
+start "后端服务-FastAPI" cmd /k call venv\Scripts\activate.bat ^& python backend\main.py
 
 REM 等待后端启动
-timeout /t 3 /nobreak
+timeout /t 4 /nobreak
 
 REM 启动前端
 echo [+] 启动前端服务...
-start "前端服务" cmd /k "call venv\Scripts\activate.bat && streamlit run frontend\app.py"
+start "前端服务-Streamlit" cmd /k call venv\Scripts\activate.bat ^& streamlit run frontend\app.py
 
 REM 等待前端启动
-timeout /t 2 /nobreak
+timeout /t 3 /nobreak
 
 REM 打开浏览器
 echo [+] 打开浏览器...
@@ -59,7 +59,9 @@ echo.
 echo ======================================
 echo [✓] 服务启动完成！
 echo 后端地址: http://localhost:8000
+echo 后端文档: http://localhost:8000/docs
 echo 前端地址: http://localhost:8501
-echo 按任意键关闭此窗口
+echo.
+echo 各个服务窗口已单独启动，可独立关闭
 echo ======================================
-pause
+timeout /t 5 /nobreak

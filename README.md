@@ -1,6 +1,6 @@
 # 本地知识库系统
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/Python-3.10.10-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -23,7 +23,7 @@
 
 ### 系统要求
 
-- **Python**: 3.9 或更高版本
+- **Python**: 3.10.10
 - **内存**: 8GB 以上推荐
 - **存储**: 10GB 以上自由空间
 - **操作系统**: Windows / Linux / macOS
