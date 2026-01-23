@@ -1,28 +1,37 @@
 """
 数据库管理模块
-SQLite数据库连接和会话管理
+MySQL数据库连接和会话管理
 """
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
-import os
 
 from models import Base
 from logger_config import get_logger
+from config import settings
 
 logger = get_logger(__name__)
 
-# 数据库文件路径
-DATABASE_DIR = "./data"
-DATABASE_FILE = "knowledge_base.db"
-DATABASE_PATH = os.path.join(DATABASE_DIR, DATABASE_FILE)
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+def _build_mysql_url(database: str | None = None) -> URL:
+    """构建MySQL连接URL"""
+    return URL.create(
+        drivername="mysql+pymysql",
+        username=settings.MYSQL_USER,
+        password=settings.MYSQL_PASSWORD,
+        host=settings.MYSQL_HOST,
+        port=settings.MYSQL_PORT,
+        database=database,
+        query={"charset": "utf8mb4"}
+    )
+
 
 # 创建数据库引擎
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},  # SQLite特定配置
-    echo=False  # 设置为True可以看到SQL语句
+    _build_mysql_url(settings.MYSQL_DB),
+    pool_size=settings.MYSQL_POOL_SIZE,
+    pool_pre_ping=True,
+    echo=settings.DEBUG,
 )
 
 # 创建会话工厂
@@ -32,12 +41,26 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_database():
     """初始化数据库,创建所有表"""
     try:
-        # 确保数据库目录存在
-        os.makedirs(DATABASE_DIR, exist_ok=True)
-        
+        # 确保数据库存在
+        server_engine = create_engine(_build_mysql_url())
+        with server_engine.connect() as conn:
+            conn.execute(
+                text(
+                    f"CREATE DATABASE IF NOT EXISTS `{settings.MYSQL_DB}` "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                )
+            )
+            conn.commit()
+
         # 创建所有表
         Base.metadata.create_all(bind=engine)
-        logger.info(f"数据库初始化成功: {DATABASE_PATH}")
+        logger.info(
+            "数据库初始化成功: %s@%s:%s/%s",
+            settings.MYSQL_USER,
+            settings.MYSQL_HOST,
+            settings.MYSQL_PORT,
+            settings.MYSQL_DB,
+        )
     except Exception as e:
         logger.error(f"数据库初始化失败: {str(e)}", exc_info=True)
         raise

@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     
     # 数据库配置
     CHROMA_DB_PATH: str = "./indexes"
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = "password"
+    MYSQL_DB: str = "knowledge_base"
+    MYSQL_POOL_SIZE: int = 10
     
     # 文件配置
     UPLOAD_DIR: str = "./data"
