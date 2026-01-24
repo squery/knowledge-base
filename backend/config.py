@@ -49,7 +49,13 @@ class Settings(BaseSettings):
     EMBEDDING_DEVICE: str = "cpu"  # 改为 "cuda" 如果有GPU
     
     # AI模型配置
-    LLM_MODEL_NAME: str = "chatglm-6b"  # 或其他开源模型
+    # LLM默认模型（免费常用）：mT5 XLSum 多语言摘要
+    # 可选：
+    # - "csebuetnlp/mT5-multilingual-XLSum"（summarization管线，支持中文）
+    # - "uer/t5-v1_1-base-chinese-cluecorpussmall"（text2text-generation，中文T5）
+    # - "google/mt5-small"（多语言T5，较小）
+    # - "t5-small"（英文为主，资源占用小）
+    LLM_MODEL_NAME: str = "csebuetnlp/mT5-multilingual-XLSum"
     LLM_MODEL_PATH: Optional[str] = None  # 本地模型路径
     LLM_DEVICE: str = "cpu"  # 改为 "cuda" 如果有GPU
     MAX_TOKENS: int = 512
@@ -57,7 +63,7 @@ class Settings(BaseSettings):
     TOP_P: float = 0.9
     TOP_K: int = 50
     USE_LLM_QA: bool = False  # 是否启用高级生成回答
-    LLM_PIPELINE: str = "summarization"  # transformers管线类型: summarization/text2text-generation
+    LLM_PIPELINE: str = "summarization"  # transformers管线类型: summarization 或 text2text-generation
     
     # 检索配置
     RETRIEVAL_K: int = 3  # 返回最相关的K条文档
