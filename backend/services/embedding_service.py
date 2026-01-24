@@ -54,7 +54,7 @@ class EmbeddingService:
             logger.error(f"模型加载失败: {str(e)}", exc_info=True)
             raise
     
-    def embed_text(self, text: str, normalize: bool = True) -> np.ndarray:
+    def embed_text(self, text: str, normalize: bool = True) -> List[float]:
         """
         生成单个文本的嵌入向量
         
@@ -63,7 +63,7 @@ class EmbeddingService:
             normalize: 是否归一化向量
             
         Returns:
-            嵌入向量 (np.ndarray)
+            嵌入向量 (list of floats)
         """
         if not self.model:
             raise RuntimeError("模型未初始化")
@@ -75,7 +75,7 @@ class EmbeddingService:
                 normalize_embeddings=normalize,
                 show_progress_bar=False
             )
-            return embeddings
+            return embeddings.tolist()
         except Exception as e:
             logger.error(f"文本嵌入失败: {str(e)}", exc_info=True)
             raise
@@ -120,9 +120,9 @@ class EmbeddingService:
             
             # 如果是单个文本,转换为列表
             if len(embeddings.shape) == 1:
-                embeddings = [embeddings]
+                embeddings = [embeddings.tolist()]
             else:
-                embeddings = [e for e in embeddings]
+                embeddings = [e.tolist() for e in embeddings]
             
             return embeddings
             
