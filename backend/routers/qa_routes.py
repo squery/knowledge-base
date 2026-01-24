@@ -11,6 +11,7 @@ from logger_config import get_logger
 from database import SessionLocal
 from services.indexing_service import get_indexing_service
 from services.vector_store import get_vector_store
+from config import settings
 
 logger = get_logger(__name__)
 
@@ -21,6 +22,7 @@ class QARequest(BaseModel):
     question: str
     top_k: int = 3
     max_tokens: int = 256
+    use_llm: bool = False
 
 
 class QASource(BaseModel):
@@ -58,6 +60,26 @@ def _generate_answer_template(question: str, contexts: List[str]) -> str:
         f"注：此为检索摘要，建议根据来源进一步核实。"
     )
     return answer
+
+
+def _generate_answer_llm(question: str, contexts: List[str]) -> Optional[str]:
+    """可选LLM生成回答，失败则返回None以便回退"""
+    try:
+        from transformers import pipeline
+        device = 0 if settings.LLM_DEVICE.lower() == "cuda" else -1
+        text = (
+            f"请总结并回答问题：{question}\n\n"
+            f"参考资料：\n" + "\n\n".join([c[:800] for c in contexts[:3]])
+        )
+        pipe = pipeline(settings.LLM_PIPELINE, model=settings.LLM_MODEL_NAME, device=device)
+        result = pipe(text, max_length=min(settings.MAX_TOKENS, 256))
+        if isinstance(result, list) and result:
+            # summarization 返回 'summary_text'；text2text-generation 返回 'generated_text'
+            item = result[0]
+            return item.get("summary_text") or item.get("generated_text")
+        return None
+    except Exception:
+        return None
 
 
 @router.post("/ask", response_model=QAResponse)
@@ -110,8 +132,12 @@ async def ask_question(req: QARequest, db: Session = Depends(get_db)):
             ))
             contexts.append(doc)
 
-        # 4) 生成回答（模板式）
-        answer = _generate_answer_template(question, contexts)
+        # 4) 生成回答：如开启LLM则尝试模型，否则模板
+        answer = None
+        if req.use_llm or settings.USE_LLM_QA:
+            answer = _generate_answer_llm(question, contexts)
+        if not answer:
+            answer = _generate_answer_template(question, contexts)
 
         return QAResponse(
             question=question,

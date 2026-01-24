@@ -307,6 +307,7 @@ def qa_section():
             placeholder="输入问题...",
             label_visibility="collapsed"
         )
+        use_llm = st.checkbox("使用高级生成 (LLM)", value=False, help="启用时尝试用模型生成更自然的回答，失败将回退摘要")
     
     with col2:
         if st.button("发送", key="send_btn"):
@@ -319,7 +320,7 @@ def qa_section():
                 try:
                     resp = requests.post(
                         f"{API_URL}/api/qa/ask",
-                        json={"question": user_input, "top_k": 3, "max_tokens": 256},
+                        json={"question": user_input, "top_k": 3, "max_tokens": 256, "use_llm": use_llm},
                         timeout=20
                     )
                     if resp.status_code == 200:

@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     TEMPERATURE: float = 0.7
     TOP_P: float = 0.9
     TOP_K: int = 50
+    USE_LLM_QA: bool = False  # 是否启用高级生成回答
+    LLM_PIPELINE: str = "summarization"  # transformers管线类型: summarization/text2text-generation
     
     # 检索配置
     RETRIEVAL_K: int = 3  # 返回最相关的K条文档
