@@ -5,8 +5,14 @@
 from typing import List, Union
 import numpy as np
 
-from logger_config import get_logger
-from config import settings
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
+try:
+    from backend.config import settings
+except Exception:
+    from config import settings
 
 logger = get_logger(__name__)
 

@@ -1,7 +1,11 @@
 """
 后端配置管理模块
 """
-from pydantic_settings import BaseSettings
+# 兼容 pydantic v2/v1：优先使用 pydantic_settings(BaseSettings)，否则回退到 pydantic.BaseSettings
+try:
+    from pydantic_settings import BaseSettings  # v2 推荐
+except Exception:
+    from pydantic import BaseSettings  # v1 回退
 from typing import Optional
 import os
 
@@ -49,20 +53,20 @@ class Settings(BaseSettings):
     EMBEDDING_DEVICE: str = "cpu"  # 改为 "cuda" 如果有GPU
     
     # AI模型配置
-    # LLM默认模型（免费常用）：mT5 XLSum 多语言摘要
+    # LLM默认模型（免费常用）：mT5-multilingual-XLSum 多语言摘要（轻量级）
     # 可选：
-    # - "csebuetnlp/mT5-multilingual-XLSum"（summarization管线，支持中文）
-    # - "uer/t5-v1_1-base-chinese-cluecorpussmall"（text2text-generation，中文T5）
+    # - "csebuetnlp/mT5-multilingual-XLSum"（summarization管线，支持中文，轻量级）
+    # - "uer/t5-v1_1-base-chinese-cluecorpussmall"（text2text-generation，中文专用）
     # - "google/mt5-small"（多语言T5，较小）
     # - "t5-small"（英文为主，资源占用小）
     LLM_MODEL_NAME: str = "csebuetnlp/mT5-multilingual-XLSum"
     LLM_MODEL_PATH: Optional[str] = None  # 本地模型路径
     LLM_DEVICE: str = "cpu"  # 改为 "cuda" 如果有GPU
-    MAX_TOKENS: int = 512
+    MAX_TOKENS: int = 128  # mT5-XLSum摘要倾向于简洁
     TEMPERATURE: float = 0.7
     TOP_P: float = 0.9
     TOP_K: int = 50
-    USE_LLM_QA: bool = False  # 是否启用高级生成回答
+    USE_LLM_QA: bool = True  # 是否启用高级生成回答（默认开启，可由前端覆盖）
     LLM_PIPELINE: str = "summarization"  # transformers管线类型: summarization 或 text2text-generation
     
     # 检索配置

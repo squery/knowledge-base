@@ -3,7 +3,10 @@
 """
 import os
 from loguru import logger
-from config import settings
+try:
+    from backend.config import settings
+except Exception:
+    from config import settings
 
 
 def setup_logger():

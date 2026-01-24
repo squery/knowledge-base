@@ -7,13 +7,32 @@ from datetime import datetime
 import time
 
 from sqlalchemy.orm import Session
-from logger_config import get_logger
-from config import settings
-from models import FileMetadata
-from processors.text_processor import processor
-from services.embedding_service import get_embedding_service
-from services.vector_store import get_vector_store
-from database import SessionLocal
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
+try:
+    from backend.config import settings
+except Exception:
+    from config import settings
+try:
+    from backend.models import FileMetadata
+except Exception:
+    from models import FileMetadata
+try:
+    from backend.processors.text_processor import processor
+except Exception:
+    from processors.text_processor import processor
+try:
+    from backend.services.embedding_service import get_embedding_service
+    from backend.services.vector_store import get_vector_store
+except Exception:
+    from services.embedding_service import get_embedding_service
+    from services.vector_store import get_vector_store
+try:
+    from backend.database import SessionLocal
+except Exception:
+    from database import SessionLocal
 
 logger = get_logger(__name__)
 

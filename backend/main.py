@@ -3,16 +3,29 @@
 FastAPI应用初始化与路由配置
 """
 import os
+import sys
+from pathlib import Path
+
+# 添加项目根路径到 sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from config import settings
-from logger_config import setup_logger, get_logger
-from database import init_database
-from routers import file_routes, index_routes
-from routers import qa_routes
+try:
+    from backend.config import settings
+    from backend.logger_config import setup_logger, get_logger
+    from backend.database import init_database
+    from backend.routers import file_routes, index_routes
+    from backend.routers import qa_routes
+except Exception:
+    from config import settings
+    from logger_config import setup_logger, get_logger
+    from database import init_database
+    from routers import file_routes, index_routes
+    from routers import qa_routes
 
 # 初始化日志
 logger = setup_logger()

@@ -1,0 +1,43 @@
+2026-01-24 14:52:50 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 14:52:50 | INFO     | __main__:<module>:128 - 启动API服务器: 0.0.0.0:8000
+2026-01-24 14:52:50 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 14:52:50 | INFO     | main:startup_event:103 - 应用启动中...
+2026-01-24 14:52:50 | INFO     | database:init_database:57 - 数据库初始化成功: %s@%s:%s/%s
+2026-01-24 14:52:50 | INFO     | main:startup_event:116 - 确保目录存在: ./data/documents
+2026-01-24 14:52:50 | INFO     | main:startup_event:116 - 确保目录存在: ./data/code
+2026-01-24 14:52:50 | INFO     | main:startup_event:116 - 确保目录存在: ./indexes
+2026-01-24 14:52:50 | INFO     | main:startup_event:116 - 确保目录存在: ./logs
+2026-01-24 14:52:50 | INFO     | main:startup_event:118 - 应用启动完成
+2026-01-24 14:52:50 | INFO     | main:shutdown_event:124 - 应用关闭中...
+2026-01-24 14:58:37 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 14:58:37 | INFO     | __main__:<module>:128 - 启动API服务器: 0.0.0.0:8000
+2026-01-24 14:58:37 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 14:58:37 | INFO     | main:startup_event:103 - 应用启动中...
+2026-01-24 14:58:37 | INFO     | database:init_database:57 - 数据库初始化成功: %s@%s:%s/%s
+2026-01-24 14:58:37 | INFO     | main:startup_event:116 - 确保目录存在: ./data/documents
+2026-01-24 14:58:37 | INFO     | main:startup_event:116 - 确保目录存在: ./data/code
+2026-01-24 14:58:37 | INFO     | main:startup_event:116 - 确保目录存在: ./indexes
+2026-01-24 14:58:37 | INFO     | main:startup_event:116 - 确保目录存在: ./logs
+2026-01-24 14:58:37 | INFO     | main:startup_event:118 - 应用启动完成
+2026-01-24 15:00:56 | INFO     | main:shutdown_event:124 - 应用关闭中...
+2026-01-24 15:02:13 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 15:02:13 | INFO     | __main__:<module>:128 - 启动API服务器: 0.0.0.0:8000
+2026-01-24 15:02:14 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 15:02:14 | INFO     | main:startup_event:103 - 应用启动中...
+2026-01-24 15:02:14 | INFO     | database:init_database:57 - 数据库初始化成功: %s@%s:%s/%s
+2026-01-24 15:02:14 | INFO     | main:startup_event:116 - 确保目录存在: ./data/documents
+2026-01-24 15:02:14 | INFO     | main:startup_event:116 - 确保目录存在: ./data/code
+2026-01-24 15:02:14 | INFO     | main:startup_event:116 - 确保目录存在: ./indexes
+2026-01-24 15:02:14 | INFO     | main:startup_event:116 - 确保目录存在: ./logs
+2026-01-24 15:02:14 | INFO     | main:startup_event:118 - 应用启动完成
+2026-01-24 15:05:38 | INFO     | main:shutdown_event:124 - 应用关闭中...
+2026-01-24 15:05:58 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 15:05:58 | INFO     | __main__:<module>:128 - 启动API服务器: 0.0.0.0:8000
+2026-01-24 15:05:58 | INFO     | logger_config:setup_logger:46 - 本地知识库系统 v1.0.0 日志系统初始化完成
+2026-01-24 15:05:58 | INFO     | main:startup_event:103 - 应用启动中...
+2026-01-24 15:05:58 | INFO     | database:init_database:57 - 数据库初始化成功: %s@%s:%s/%s
+2026-01-24 15:05:58 | INFO     | main:startup_event:116 - 确保目录存在: ./data/documents
+2026-01-24 15:05:58 | INFO     | main:startup_event:116 - 确保目录存在: ./data/code
+2026-01-24 15:05:58 | INFO     | main:startup_event:116 - 确保目录存在: ./indexes
+2026-01-24 15:05:58 | INFO     | main:startup_event:116 - 确保目录存在: ./logs
+2026-01-24 15:05:58 | INFO     | main:startup_event:118 - 应用启动完成

@@ -7,11 +7,24 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 
-from logger_config import get_logger
-from database import SessionLocal
-from models import FileMetadata
-from services.indexing_service import get_indexing_service
-from services.vector_store import get_vector_store
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
+try:
+    from backend.database import SessionLocal
+except Exception:
+    from database import SessionLocal
+try:
+    from backend.models import FileMetadata
+except Exception:
+    from models import FileMetadata
+try:
+    from backend.services.indexing_service import get_indexing_service
+    from backend.services.vector_store import get_vector_store
+except Exception:
+    from services.indexing_service import get_indexing_service
+    from services.vector_store import get_vector_store
 
 logger = get_logger(__name__)
 

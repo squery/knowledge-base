@@ -7,11 +7,24 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from database import get_db
-from models import FileType, IndexStatus
-from services.file_service import FileService
-from services.indexing_service import get_indexing_service
-from logger_config import get_logger
+try:
+    from backend.database import get_db
+except Exception:
+    from database import get_db
+try:
+    from backend.models import FileType, IndexStatus
+except Exception:
+    from models import FileType, IndexStatus
+try:
+    from backend.services.file_service import FileService
+    from backend.services.indexing_service import get_indexing_service
+except Exception:
+    from services.file_service import FileService
+    from services.indexing_service import get_indexing_service
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/files", tags=["文件管理"])

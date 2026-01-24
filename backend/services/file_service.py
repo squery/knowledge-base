@@ -9,9 +9,18 @@ from typing import List, Optional, Tuple
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from models import FileMetadata, FileType, IndexStatus
-from config import settings
-from logger_config import get_logger
+try:
+    from backend.models import FileMetadata, FileType, IndexStatus
+except Exception:
+    from models import FileMetadata, FileType, IndexStatus
+try:
+    from backend.config import settings
+except Exception:
+    from config import settings
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
 
 logger = get_logger(__name__)
 

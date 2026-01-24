@@ -7,11 +7,24 @@ from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from logger_config import get_logger
-from database import SessionLocal
-from services.indexing_service import get_indexing_service
-from services.vector_store import get_vector_store
-from config import settings
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
+try:
+    from backend.database import SessionLocal
+except Exception:
+    from database import SessionLocal
+try:
+    from backend.services.indexing_service import get_indexing_service
+    from backend.services.vector_store import get_vector_store
+except Exception:
+    from services.indexing_service import get_indexing_service
+    from services.vector_store import get_vector_store
+try:
+    from backend.config import settings
+except Exception:
+    from config import settings
 
 logger = get_logger(__name__)
 
@@ -48,29 +61,34 @@ def get_db():
 
 
 def _generate_answer_template(question: str, contexts: List[str]) -> str:
-    """模板式汇总生成回答，避免重模型依赖"""
+    """模板式汇总生成回答，避免重模型依赖；支持自然中文表达"""
     if not contexts:
-        return "抱歉，未检索到相关内容。请尝试上传或调整问题。"
-    # 简单摘要：取前若干段落拼接，附带主题
-    joined = "\n\n".join([c.strip()[:500] for c in contexts[:3]])
-    answer = (
-        f"问题：{question}\n\n" 
-        f"根据检索到的内容，综合摘要如下：\n" 
-        f"{joined}\n\n"
-        f"注：此为检索摘要，建议根据来源进一步核实。"
-    )
+        return "抱歉，我在知识库中未找到相关内容。您可以尝试上传相关文档或换一个问题重新提问。"
+    # 取最相关的段落，拼接成上下文，生成自然回答
+    key_contexts = [c.strip() for c in contexts[:3]]
+    main_content = key_contexts[0][:300] if key_contexts else ""
+    
+    # 用更自然的中文回答模板
+    answer = f"根据知识库内容：\n\n{main_content}\n\n" \
+             f"总的来说，{question}。" \
+             f"更详细的信息请查看相关来源文档。"
     return answer
 
 
 def _generate_answer_llm(question: str, contexts: List[str]) -> Optional[str]:
-    """可选LLM生成回答，失败则返回None以便回退"""
+    """可选LLM生成回答，失败则返回None以便回退；优化中文提示词"""
     try:
         from transformers import pipeline
         device = 0 if settings.LLM_DEVICE.lower() == "cuda" else -1
-        text = (
-            f"请总结并回答问题：{question}\n\n"
-            f"参考资料：\n" + "\n\n".join([c[:800] for c in contexts[:3]])
-        )
+        
+        # 为summarization和text2text-generation分别优化提示词
+        if settings.LLM_PIPELINE == "summarization":
+            # mT5-XLSum：直接输入要摘要的内容
+            text = "\n\n".join([c[:800] for c in contexts[:3]])
+        else:
+            # text2text-generation：带任务指示的输入
+            text = f"问答: {question}\n参考资料:\n" + "\n".join([c[:300] for c in contexts[:3]])
+        
         pipe = pipeline(settings.LLM_PIPELINE, model=settings.LLM_MODEL_NAME, device=device)
         result = pipe(text, max_length=min(settings.MAX_TOKENS, 256))
         if isinstance(result, list) and result:

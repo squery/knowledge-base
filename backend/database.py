@@ -7,9 +7,18 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 
-from models import Base
-from logger_config import get_logger
-from config import settings
+try:
+    from backend.models import Base
+except Exception:
+    from models import Base
+try:
+    from backend.logger_config import get_logger
+except Exception:
+    from logger_config import get_logger
+try:
+    from backend.config import settings
+except Exception:
+    from config import settings
 
 logger = get_logger(__name__)
 
