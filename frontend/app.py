@@ -315,7 +315,30 @@ def qa_section():
                     "role": "user",
                     "content": user_input
                 })
-                st.success("问答功能待实现")
+                # 调用后端问答接口
+                try:
+                    resp = requests.post(
+                        f"{API_URL}/api/qa/ask",
+                        json={"question": user_input, "top_k": 3, "max_tokens": 256},
+                        timeout=20
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        answer = data.get("answer", "")
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": answer
+                        })
+                        # 显示来源
+                        sources = data.get("sources", [])
+                        if sources:
+                            with st.expander("📎 参考来源"):
+                                for s in sources:
+                                    st.caption(f"{s.get('file_path', '未知')} | 相似度: {s.get('similarity', 0):.2f}")
+                    else:
+                        st.error(f"问答失败: {resp.status_code}")
+                except Exception as e:
+                    st.error(f"问答出错: {str(e)}")
                 st.rerun()
     
     # 高级选项
