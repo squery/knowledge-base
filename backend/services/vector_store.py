@@ -62,16 +62,18 @@ class VectorStore:
         documents: List[str],
         embeddings: List[List[float]],
         metadatas: List[Dict] = None,
-        ids: List[str] = None
+        ids: List[str] = None,
+        deduplicate: bool = True
     ) -> List[str]:
         """
-        添加文档到向量存储
+        添加文档到向量存储（支持去重）
         
         Args:
             documents: 文档文本列表
             embeddings: 对应的向量列表
             metadatas: 元数据列表
             ids: 文档ID列表 (自动生成如果不提供)
+            deduplicate: 是否去重（基于ID）
             
         Returns:
             添加的文档ID列表
@@ -89,13 +91,27 @@ class VectorStore:
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 ids = [f"doc_{timestamp}_{i}" for i in range(len(documents))]
             
+            # 去重检查
+            if deduplicate:
+                existing = self.collection.get(ids=ids, include=[])
+                existing_ids = set(existing.get("ids", []))
+                
+                if existing_ids:
+                    logger.info(f"检测到 {len(existing_ids)} 个重复ID，将跳过")
+                    # 过滤掉已存在的
+                    filtered = [(i, d, e, m) for i, d, e, m in zip(ids, documents, embeddings, metadatas or [{}]*len(ids)) 
+                                if i not in existing_ids]
+                    if not filtered:
+                        logger.warning("所有文档ID均已存在，跳过添加")
+                        return []
+                    ids, documents, embeddings, metadatas = zip(*filtered)
+                    ids, documents, embeddings, metadatas = list(ids), list(documents), list(embeddings), list(metadatas)
+            
             # 构建元数据
             if metadatas is None:
                 metadatas = [{} for _ in documents]
             
-            # 添加时间戳
-            for meta in metadatas:
-                meta["added_time"] = datetime.now().isoformat()
+            # 不再添加时间戳，减少元数据开销
             
             logger.info(f"添加 {len(documents)} 个文档到向量存储")
             

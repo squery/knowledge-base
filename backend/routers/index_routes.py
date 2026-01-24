@@ -31,6 +31,16 @@ class IndexStatusResponse(BaseModel):
     index_ratio: str
 
 
+class IndexProgressResponse(BaseModel):
+    """索引进度响应"""
+    file_id: int
+    filename: str
+    status: str
+    progress: float  # 0-100
+    current_step: str
+    message: str
+
+
 class FileIndexResponse(BaseModel):
     """文件索引结果"""
     success: bool
@@ -38,6 +48,7 @@ class FileIndexResponse(BaseModel):
     file_id: int
     index_status: str
     chunk_count: int = 0
+    progress: Optional[float] = None
 
 
 class SearchResult(BaseModel):

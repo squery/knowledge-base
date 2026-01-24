@@ -143,12 +143,15 @@ class TextProcessor:
             return self._read_text_file(file_path)
     
     def _read_code_file(self, file_path: str) -> str:
-        """读取代码文件(保留结构信息)"""
+        """读取代码文件(保留结构信息和函数/类上下文)"""
         text = self._read_text_file(file_path)
         
         # 添加文件信息头
         file_name = os.path.basename(file_path)
         _, ext = os.path.splitext(file_path)
+        
+        # 尝试解析代码结构（函数、类、注释）
+        structured_text = self._parse_code_structure(text, ext)
         
         header = f"""
 文件名: {file_name}
@@ -156,7 +159,74 @@ class TextProcessor:
 代码内容:
 --- 开始 ---
 """
-        return header + text + "\n--- 结束 ---"
+        return header + structured_text + "\n--- 结束 ---"
+    
+    def _parse_code_structure(self, code: str, ext: str) -> str:
+        """
+        解析代码结构，提取函数、类、注释等关键信息
+        
+        Args:
+            code: 源代码文本
+            ext: 文件扩展名
+            
+        Returns:
+            带结构标记的代码文本
+        """
+        # 简化版：为主要语言添加结构标记
+        lines = code.split('\n')
+        annotated_lines = []
+        
+        # Python代码结构识别
+        if ext == '.py':
+            for i, line in enumerate(lines):
+                stripped = line.lstrip()
+                # 识别类定义
+                if stripped.startswith('class '):
+                    class_name = stripped.split('(')[0].replace('class ', '').strip(':')
+                    annotated_lines.append(f"[类定义: {class_name}]")
+                # 识别函数定义
+                elif stripped.startswith('def '):
+                    func_name = stripped.split('(')[0].replace('def ', '')
+                    annotated_lines.append(f"[函数: {func_name}]")
+                annotated_lines.append(line)
+        
+        # JavaScript/TypeScript代码结构识别
+        elif ext in ['.js', '.ts', '.jsx', '.tsx']:
+            for line in lines:
+                stripped = line.lstrip()
+                # 识别类定义
+                if stripped.startswith('class '):
+                    class_name = stripped.split('{')[0].replace('class ', '').strip()
+                    annotated_lines.append(f"[类定义: {class_name}]")
+                # 识别函数定义
+                elif re.match(r'(function\s+\w+|const\s+\w+\s*=.*=>|async\s+function)', stripped):
+                    func_match = re.search(r'(function\s+(\w+)|const\s+(\w+))', stripped)
+                    if func_match:
+                        func_name = func_match.group(2) or func_match.group(3)
+                        annotated_lines.append(f"[函数: {func_name}]")
+                annotated_lines.append(line)
+        
+        # Java代码结构识别
+        elif ext == '.java':
+            for line in lines:
+                stripped = line.lstrip()
+                # 识别类定义
+                if re.match(r'(public|private|protected)?\s*(class|interface|enum)\s+\w+', stripped):
+                    class_match = re.search(r'(class|interface|enum)\s+(\w+)', stripped)
+                    if class_match:
+                        annotated_lines.append(f"[{class_match.group(1)}: {class_match.group(2)}]")
+                # 识别方法定义
+                elif re.match(r'(public|private|protected)?\s*\w+\s+\w+\s*\(', stripped):
+                    method_match = re.search(r'\s(\w+)\s*\(', stripped)
+                    if method_match:
+                        annotated_lines.append(f"[方法: {method_match.group(1)}]")
+                annotated_lines.append(line)
+        
+        # 其他语言直接返回原始代码
+        else:
+            return code
+        
+        return '\n'.join(annotated_lines)
     
     def _chunk_text(self, text: str, file_path: str = None) -> List[TextChunk]:
         """

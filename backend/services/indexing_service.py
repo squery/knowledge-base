@@ -21,27 +21,34 @@ logger = get_logger(__name__)
 class IndexingService:
     """索引服务 - 管理文件索引流程"""
     
-    def __init__(self):
-        """初始化索引服务"""
+    def __init__(self, max_retries: int = 3):
+        """初始化索引服务
+        
+        Args:
+            max_retries: 索引失败最大重试次数
+        """
         self.embedding_service = get_embedding_service()
         self.vector_store = get_vector_store()
         self.logger = logger
+        self.max_retries = max_retries
     
     def index_file(
         self,
         file_id: int,
         file_path: str,
         file_type: str,
-        db: Optional[Session] = None
+        db: Optional[Session] = None,
+        retry_count: int = 0
     ) -> Tuple[bool, str, int]:
         """
-        索引单个文件
+        索引单个文件（带重试机制）
         
         Args:
             file_id: 文件ID
             file_path: 文件路径
             file_type: 文件类型
             db: 数据库会话
+            retry_count: 当前重试次数
             
         Returns:
             (是否成功, 错误信息或提示, 分块数)
@@ -74,20 +81,15 @@ class IndexingService:
             )
             logger.info(f"向量化完成: {len(embeddings)} 个向量")
             
-            # 4. 准备元数据
+            # 4. 准备元数据（精简版，避免冗余）
             metadatas = []
             for i, chunk in enumerate(chunks):
                 metadata = {
                     "file_id": str(file_id),
                     "chunk_index": str(i),
-                    "file_path": file_path,
                     "file_type": file_type,
-                    "content_length": str(len(chunk.content)),
+                    # 仅保留关键元数据，减少存储开销
                 }
-                # 添加文件类型特定的元数据
-                if chunk.metadata:
-                    metadata.update(chunk.metadata)
-                
                 metadatas.append(metadata)
             
             # 5. 存储到向量数据库
@@ -126,8 +128,16 @@ class IndexingService:
             
         except Exception as e:
             error_msg = f"索引失败: {str(e)}"
+            
+            # 重试逻辑
+            if retry_count < self.max_retries:
+                logger.warning(f"索引失败，准备重试 ({retry_count + 1}/{self.max_retries}): ID={file_id}")
+                time.sleep(2 ** retry_count)  # 指数退避
+                return self.index_file(file_id, file_path, file_type, db, retry_count + 1)
+            
+            # 重试次数用尽，标记为失败
             self._update_file_status(file_id, "failed", error_msg)
-            logger.error(f"索引文件失败: ID={file_id}, 错误={error_msg}", exc_info=True)
+            logger.error(f"索引文件失败（已重试{retry_count}次）: ID={file_id}, 错误={error_msg}", exc_info=True)
             return False, error_msg, 0
             
         finally:
