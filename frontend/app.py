@@ -56,8 +56,6 @@ def init_session_state():
         st.session_state.uploaded_files = []
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
-    if "selected_tab" not in st.session_state:
-        st.session_state.selected_tab = "🔍 智能问答"
 
 
 def check_api_health():
@@ -335,7 +333,8 @@ def index_management_section():
     
     # 获取索引状态
     try:
-        response = requests.get(f"{API_URL}/api/index/status", timeout=5)
+        # 首次命中会初始化嵌入模型，可能耗时较长，适当放宽超时
+        response = requests.get(f"{API_URL}/api/index/status", timeout=30)
         if response.status_code == 200:
             stats = response.json()
             
@@ -429,7 +428,8 @@ def index_management_section():
     try:
         response = requests.get(f"{API_URL}/api/files/list", timeout=5)
         if response.status_code == 200:
-            files = response.json().get("data", {}).get("items", [])
+            # 后端返回结构为{"data": [..]}，无需items层
+            files = response.json().get("data", [])
             
             if files:
                 # 创建表格数据
@@ -591,13 +591,14 @@ def main():
     with st.sidebar:
         st.title("导航")
         st.markdown('<div class="sidebar-nav">', unsafe_allow_html=True)
+        # 仅由widget管理selected_tab的值，避免与Session State默认值冲突
         selected = st.radio(
             "选择功能",
             SIDEBAR_SECTIONS,
-            index=SIDEBAR_SECTIONS.index(st.session_state.selected_tab),
+            index=SIDEBAR_SECTIONS.index("🔍 智能问答"),
             label_visibility="collapsed",
+            key="selected_tab"
         )
-        st.session_state.selected_tab = selected
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.divider()

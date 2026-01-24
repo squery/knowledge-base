@@ -46,7 +46,8 @@ timeout /t 4 /nobreak
 
 REM 启动前端
 echo [+] 启动前端服务...
-start "前端服务-Streamlit" cmd /k call venv\Scripts\activate.bat ^& streamlit run frontend\app.py
+REM 关闭 Streamlit 自动开浏览器，避免重复打开
+start "前端服务-Streamlit" cmd /k call venv\Scripts\activate.bat ^& streamlit run frontend\app.py --server.headless true
 
 REM 等待前端启动
 timeout /t 3 /nobreak
