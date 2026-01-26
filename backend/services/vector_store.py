@@ -129,8 +129,7 @@ class VectorStore:
                 metadatas=metadatas
             )
             
-            # 持久化
-            self.client.persist()
+            # 注意: Chroma 0.4.x+ PersistentClient 会自动持久化，无需手动调用 persist()
             
             logger.info(f"文档添加成功: {len(ids)} 个")
             return ids
@@ -200,7 +199,7 @@ class VectorStore:
         try:
             logger.info(f"删除 {len(ids)} 个文档")
             self.collection.delete(ids=ids)
-            self.client.persist()
+            # Chroma 0.4.x+ PersistentClient 会自动持久化
             logger.info(f"文档删除成功")
             return True
         except Exception as e:
@@ -296,7 +295,7 @@ class VectorStore:
                 name="knowledge_base",
                 metadata={"hnsw:space": "cosine"}
             )
-            self.client.persist()
+            # Chroma 0.4.x+ PersistentClient 会自动持久化
             return True
         except Exception as e:
             logger.error(f"清空集合失败: {str(e)}", exc_info=True)
