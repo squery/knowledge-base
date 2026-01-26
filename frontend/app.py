@@ -221,7 +221,7 @@ def upload_files(files):
             response = requests.post(
                 f"{API_URL}/api/files/upload",
                 files=files_data,
-                timeout=30
+                timeout=120  # 增加超时时间到 2 分钟，索引可能很耗时
             )
             
             if response.status_code == 200:

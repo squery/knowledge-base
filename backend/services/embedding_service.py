@@ -97,6 +97,16 @@ class EmbeddingService:
             show_progress: 是否显示进度
             
         Returns:
+"""
+批量生成文本嵌入向量
+
+        Args:
+            texts: 文本列表
+            batch_size: 批量大小
+            normalize: 是否归一化向量
+            show_progress: 是否显示进度
+            
+        Returns:
             嵌入向量列表
         """
         if not self.model:
@@ -106,7 +116,9 @@ class EmbeddingService:
             return []
         
         try:
-            logger.info(f"开始批量嵌入: {len(texts)} 条文本, batch_size={batch_size}")
+            import time
+            start = time.time()
+            logger.info(f"开始批量嵌入: {len(texts)} 条文本, batch_size={batch_size}, device={self.device}")
             
             embeddings = self.model.encode(
                 texts,
@@ -116,7 +128,9 @@ class EmbeddingService:
                 show_progress_bar=show_progress
             )
             
-            logger.info(f"批量嵌入完成: 生成 {len(embeddings)} 个向量")
+            elapsed = time.time() - start
+            tokens_per_sec = len(texts) / elapsed if elapsed > 0 else 0
+            logger.info(f"✅ 批量嵌入完成: 生成 {len(embeddings)} 个向量, 耗时={elapsed:.2f}s, 速度={tokens_per_sec:.1f} 文本/s")
             
             # 如果是单个文本,转换为列表
             if len(embeddings.shape) == 1:

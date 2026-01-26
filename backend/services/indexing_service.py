@@ -79,6 +79,7 @@ class IndexingService:
             logger.info(f"开始索引文件: ID={file_id}, 路径={file_path}")
             
             # 1. 文本处理 - 分块
+            step_start = time.time()
             logger.debug(f"处理文件文本...")
             chunks = processor.process_file(file_path)
             
@@ -86,21 +87,25 @@ class IndexingService:
                 raise ValueError("未能从文件中提取文本")
             
             chunk_count = len(chunks)
-            logger.info(f"文本分块完成: {chunk_count} 个块")
+            step_time = time.time() - step_start
+            logger.info(f"文本分块完成: {chunk_count} 个块, 耗时={step_time:.2f}s")
             
             # 2. 提取分块内容
             chunk_contents = [chunk.content for chunk in chunks]
             
             # 3. 向量化 - 批处理
+            step_start = time.time()
             logger.debug(f"向量化 {len(chunk_contents)} 个块...")
             embeddings = self.embedding_service.embed_texts(
                 chunk_contents,
                 batch_size=32,
                 normalize=True
             )
-            logger.info(f"向量化完成: {len(embeddings)} 个向量")
+            step_time = time.time() - step_start
+            logger.info(f"向量化完成: {len(embeddings)} 个向量, 耗时={step_time:.2f}s")
             
             # 4. 准备元数据（精简版，避免冗余）
+            step_start = time.time()
             metadatas = []
             for i, chunk in enumerate(chunks):
                 metadata = {
@@ -110,8 +115,11 @@ class IndexingService:
                     # 仅保留关键元数据，减少存储开销
                 }
                 metadatas.append(metadata)
+            step_time = time.time() - step_start
+            logger.debug(f"元数据准备完成: 耗时={step_time:.2f}s")
             
             # 5. 存储到向量数据库
+            step_start = time.time()
             logger.debug(f"存储向量到数据库...")
             vector_ids = self.vector_store.add_documents(
                 documents=chunk_contents,
@@ -119,9 +127,11 @@ class IndexingService:
                 metadatas=metadatas,
                 ids=[f"file_{file_id}_chunk_{i}" for i in range(len(chunks))]
             )
-            logger.info(f"向量存储完成: {len(vector_ids)} 个向量")
+            step_time = time.time() - step_start
+            logger.info(f"向量存储完成: {len(vector_ids)} 个向量, 耗时={step_time:.2f}s")
             
             # 6. 更新数据库
+            step_start = time.time()
             file_meta = session.query(FileMetadata).filter(
                 FileMetadata.id == file_id
             ).first()
@@ -133,9 +143,11 @@ class IndexingService:
                 file_meta.error_message = None
                 session.commit()
                 logger.info(f"文件索引状态已更新: indexed, 分块数: {chunk_count}")
+            step_time = time.time() - step_start
+            logger.debug(f"数据库更新完成: 耗时={step_time:.2f}s")
             
             elapsed_time = time.time() - start_time
-            logger.info(f"文件索引完成: ID={file_id}, 耗时={elapsed_time:.2f}s")
+            logger.info(f"✅ 文件索引完成: ID={file_id}, 总耗时={elapsed_time:.2f}s, 分块={chunk_count}")
             
             return True, f"索引成功: {chunk_count} 个块", chunk_count
             
