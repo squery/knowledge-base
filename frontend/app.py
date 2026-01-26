@@ -4,6 +4,8 @@
 import streamlit as st
 import requests
 import json
+import os
+from pathlib import Path
 from datetime import datetime
 
 # 页面配置
@@ -47,7 +49,7 @@ st.markdown("""
 
 # 全局变量
 API_URL = "http://localhost:8000"
-SIDEBAR_SECTIONS = ["📚 文件管理", "🔍 智能问答", "📊 索引管理", "⚙️ 系统设置"]
+SIDEBAR_SECTIONS = ["📚 文件管理", "🔍 智能问答", "📊 索引管理", "⚙️ 系统设置", "📖 用户文档"]
 
 
 def init_session_state():
@@ -598,6 +600,51 @@ def settings_section():
         st.success("设置已保存")
 
 
+def docs_section():
+    """用户文档查看部分"""
+    st.header("📖 用户文档")
+
+    docs_dir = Path(__file__).resolve().parent.parent / "docs"
+    doc_options = {
+        "使用指南 (USER_GUIDE.md)": docs_dir / "USER_GUIDE.md",
+        "常见问题 (FAQ.md)": docs_dir / "FAQ.md",
+        "快速上手 (QUICKSTART.md)": docs_dir / "QUICKSTART.md",
+        "API 文档 (API_DOCUMENTATION.md)": docs_dir / "API_DOCUMENTATION.md",
+        "架构设计 (ARCHITECTURE.md)": docs_dir / "ARCHITECTURE.md",
+        "数据库设计 (DATABASE_DESIGN.md)": docs_dir / "DATABASE_DESIGN.md",
+        "模块设计 (MODULE_DESIGN.md)": docs_dir / "MODULE_DESIGN.md",
+        "API 设计概要 (API_DESIGN_SUMMARY.md)": docs_dir / "API_DESIGN_SUMMARY.md",
+        "视频演示脚本 (VIDEO_SCRIPT.md)": docs_dir / "VIDEO_SCRIPT.md",
+    }
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_label = st.selectbox("选择要查看的文档", list(doc_options.keys()))
+    with col2:
+        if st.button("刷新文档"):
+            st.rerun()
+
+    doc_path = doc_options[selected_label]
+    if not doc_path.exists():
+        st.warning(f"文档不存在：{doc_path}")
+        return
+
+    # 文档元信息
+    st.caption(f"📄 路径: {doc_path}")
+    try:
+        mtime = datetime.fromtimestamp(doc_path.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+        st.caption(f"🕒 最近更新: {mtime}")
+    except Exception:
+        pass
+
+    # 渲染Markdown
+    try:
+        content = doc_path.read_text(encoding="utf-8")
+        st.markdown(content)
+    except Exception as e:
+        st.error(f"读取文档失败: {e}")
+
+
 def main():
     """主函数"""
     init_session_state()
@@ -642,6 +689,8 @@ def main():
         index_management_section()
     elif selected == "⚙️ 系统设置":
         settings_section()
+    elif selected == "📖 用户文档":
+        docs_section()
     
     # 底部信息
     st.divider()
