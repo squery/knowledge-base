@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     DOCUMENTS_DIR: str = "./data/documents"
     CODE_DIR: str = "./data/code"
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
-    ALLOWED_DOCUMENT_TYPES: list = [".txt", ".pdf", ".docx", ".md", ".html"]
+    ALLOWED_DOCUMENT_TYPES: list = [".txt", ".pdf", ".docx", ".md", ".html", ".pcd"]
     ALLOWED_CODE_TYPES: list = [".py", ".js", ".java", ".cpp", ".go", ".rs", ".ts", ".jsx", ".tsx", ".cs"]
     
     # 日志配置

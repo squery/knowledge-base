@@ -76,6 +76,8 @@ class TextProcessor:
             text = self._read_html_file(file_path)
         elif ext in ['.py', '.js', '.java', '.cpp', '.go', '.rs', '.ts', '.jsx', '.tsx', '.cs']:
             text = self._read_code_file(file_path)
+        elif ext == '.pcd':
+            text = self._read_pcd_file(file_path)
         else:
             logger.warning(f"未知的文件类型: {ext}, 按纯文本处理")
             text = self._read_text_file(file_path)
@@ -142,6 +144,76 @@ class TextProcessor:
             # 降级方案: 直接读取
             return self._read_text_file(file_path)
     
+    def _read_pcd_file(self, file_path: str) -> str:
+        """
+        读取PCD点云文件
+        解析文件头部元数据，并在数据为ASCII格式时采样部分点数据
+        """
+        file_name = os.path.basename(file_path)
+        header_lines = []
+        data_format = "unknown"
+        fields = []
+        num_points = 0
+        sample_points = []
+
+        try:
+            with open(file_path, 'rb') as f:
+                for raw_line in f:
+                    try:
+                        line = raw_line.decode('utf-8', errors='ignore').rstrip()
+                    except Exception:
+                        break
+
+                    header_lines.append(line)
+
+                    lower = line.lower()
+                    if lower.startswith('fields'):
+                        fields = line.split()[1:]
+                    elif lower.startswith('points'):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            try:
+                                num_points = int(parts[1])
+                            except ValueError:
+                                pass
+                    elif lower.startswith('data'):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            data_format = parts[1].lower()
+                        break
+
+                # 如果是ASCII格式，采样最多20行点数据
+                if data_format == 'ascii':
+                    for raw_line in f:
+                        try:
+                            line = raw_line.decode('utf-8', errors='ignore').rstrip()
+                        except Exception:
+                            break
+                        if line:
+                            sample_points.append(line)
+                        if len(sample_points) >= 20:
+                            break
+
+        except Exception as e:
+            logger.warning(f"读取PCD文件失败: {file_path}, 错误: {e}")
+            return f"文件名: {file_name}\n文件类型: PCD点云文件\n(文件读取失败)\n"
+
+        header_text = '\n'.join(header_lines)
+        result = f"""文件名: {file_name}
+文件类型: PCD 3D点云文件
+点云数量: {num_points}
+字段列表: {' '.join(fields) if fields else '未知'}
+数据格式: {data_format}
+
+--- PCD文件头部 ---
+{header_text}
+"""
+        if sample_points:
+            result += f"\n--- 点数据采样(前{len(sample_points)}行, 共{num_points}点) ---\n"
+            result += '\n'.join(sample_points)
+
+        return result
+
     def _read_code_file(self, file_path: str) -> str:
         """读取代码文件(保留结构信息和函数/类上下文)"""
         text = self._read_text_file(file_path)

@@ -83,7 +83,7 @@ def file_management_section():
         uploaded_files = st.file_uploader(
             "选择文件",
             accept_multiple_files=True,
-            help="支持文档(txt, pdf, docx, md, html)和代码文件(py, js, java等)",
+            help="支持文档(txt, pdf, docx, md, html, pcd)和代码文件(py, js, java等)",
             key="file_uploader"
         )
         
