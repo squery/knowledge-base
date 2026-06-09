@@ -149,9 +149,12 @@ class TextProcessor:
         读取PCD点云文件
         解析文件头部元数据，并在数据为ASCII格式时采样部分点数据
         """
+        _PCD_FORMAT_UNKNOWN = "unknown"
+        _MAX_PCD_SAMPLE_POINTS = 20
+
         file_name = os.path.basename(file_path)
         header_lines = []
-        data_format = "unknown"
+        data_format = _PCD_FORMAT_UNKNOWN
         fields = []
         num_points = 0
         sample_points = []
@@ -161,7 +164,8 @@ class TextProcessor:
                 for raw_line in f:
                     try:
                         line = raw_line.decode('utf-8', errors='ignore').rstrip()
-                    except Exception:
+                    except UnicodeDecodeError as e:
+                        logger.warning(f"PCD文件头部解码失败: {file_path}, 错误: {e}")
                         break
 
                     header_lines.append(line)
@@ -182,16 +186,17 @@ class TextProcessor:
                             data_format = parts[1].lower()
                         break
 
-                # 如果是ASCII格式，采样最多20行点数据
+                # 如果是ASCII格式，采样最多 _MAX_PCD_SAMPLE_POINTS 行点数据
                 if data_format == 'ascii':
                     for raw_line in f:
                         try:
                             line = raw_line.decode('utf-8', errors='ignore').rstrip()
-                        except Exception:
+                        except UnicodeDecodeError as e:
+                            logger.warning(f"PCD点数据解码失败: {file_path}, 错误: {e}")
                             break
                         if line:
                             sample_points.append(line)
-                        if len(sample_points) >= 20:
+                        if len(sample_points) >= _MAX_PCD_SAMPLE_POINTS:
                             break
 
         except Exception as e:
